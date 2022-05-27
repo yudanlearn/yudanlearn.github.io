@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Hangman</title>
+	<link rel="stylesheet" href="./hangstyle_original.css">
+</head>
+<body>
+	<header>
+		<h1>hangman game</h1>
+	</header>
+	<div class="photo">
+		<img src="./1.png" class="man" id="man1">
+		<img src="./2.png" class="man hide_img" id="man2">
+		<img src="./3.png" class="man hide_img" id="man3">
+		<img src="./4.png" class="man hide_img" id="man4">
+		<img src="./5.png" class="man hide_img" id="man5">
+		<img src="./6.png" class="man hide_img" id="man6">
+		<img src="./7.png" class="man hide_img" id="man7">
+	</div>
+	<div class="keyin" id="words">
+	</div>
+	<div class="button">
+		<table>
+			<tr>
+				<td>
+					<button class="character" value="q">q</button>
+					<button class="character" value="w">w</button>
+					<button class="character" value="e">e</button>
+					<button class="character" value="r">r</button>
+					<button class="character" value="t">t</button>
+					<button class="character" value="y">y</button>
+					<button class="character" value="u">u</button>
+					<button class="character" value="i">i</button>
+					<button class="character" value="o">o</button>
+					<button class="character" value="p">p</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<button class="character" value="a">a</button>
+					<button class="character" value="s">s</button>
+					<button class="character" value="d">d</button>
+					<button class="character" value="f">f</button>
+					<button class="character" value="g">g</button>
+					<button class="character" value="h">h</button>
+					<button class="character" value="j">j</button>
+					<button class="character" value="k">k</button>
+					<button class="character" value="l">l</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<button class="character" value="z">z</button>
+					<button class="character" value="x">x</button>
+					<button class="character" value="c">c</button>
+					<button class="character" value="v">v</button>
+					<button class="character" value="b">b</button>
+					<button class="character" value="m">m</button>
+					<button class="character" value="n">n</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<!-- Container for final message -->
+	<div class="popup-container" id="popup-container">
+			<div class="popup">
+					<h2 id="final-message"></h2>
+					<button id="play-button">Play Again</button>
+			</div>
+	</div>
+</body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+var total_chars = 0;
+var char_map = {};
+var total_click = 0;
+var total_false_click = 1;
+var current_man;
+var MAX_FAIL_NUMBER = 7;
+function parseWords(word) {
+	var myMap = {};
+	for (let i = 0; i < word.length; i++) {
+		var character = word[i];
+		if (myMap[character] == undefined) {
+			myMap[character] = 1;
+		} else {
+			myMap[character] = myMap[character] + 1;
+		}
+	}
+	return myMap;
+}
+
+function parseWordsStack(word) {
+	var myMap = {};
+	for (let i = 0; i < word.length; i++) {
+		var character = word[i];
+		if (myMap[character] == undefined) {
+			myMap[character] = [i];
+		} else {
+			myMap[character].push(i);
+		}
+	}
+	return myMap;
+}
+
+function getMan(index) {
+	var index_man = $("#man" + index);
+	return index_man;
+}
+
+function getInput(char_map, index) {
+	return char_map[index];
+}
+
+function checkSuccess(myMap) {
+	var result = true;
+	for (var key in myMap) {
+		if (myMap[key] != 0) {
+			result = false;
+		}
+	}
+	return result;
+}
+
+function showpopup(pop_h2, pop_msg, msg) {
+	pop_h2.text(msg);
+	pop_msg.show();
+}
+
+function generate_word(word_list) {
+	var index = Math.floor((Math.random()*word_list.length));
+	return word_list[index];
+}
+
+var WORD_LSIT = [
+	"animal",
+	"hello",
+	"tiger",
+	"lion",
+	"puma",
+	"bear",
+	"leopard",
+	"crocodile",
+	"hyena",
+	"wolf",
+	"jackal",
+	"snake",
+	"cobra",
+	"rattlesnake",
+	"boa",
+	"lizard",
+	"chameleon",
+	"elephant",
+	"rhinoceros",
+	"hippo",
+	"bovine",
+	"bison",
+	"bull",
+	"cow",
+	"buffalo",
+	"Chihuahua",
+	"giraffe",
+	"antelope",
+	"deer",
+	"impala",
+	"zebra",
+	"mustang",
+	"kangaroo",
+	"gorilla",
+	"chimpanzee"
+];
+
+
+$(document).ready(function(){
+	var popup_msg = $("#popup-container");
+	var popup_button = $("#play-button");
+	var popup_h2 = $("#final-message");
+
+	var word = generate_word(WORD_LSIT);
+	total_chars = word.length;
+	var myMap = parseWords(word);
+	var myMapStack = parseWordsStack(word);
+	var char_div = $("#words");
+
+	function set_input(char_count, char_div, char_map) {
+		for (let i = 0; i < char_count; i++) {
+			var tmp_input = $("<input class='word'>");
+			char_map[i] = tmp_input;
+			char_div.append(tmp_input);
+		}
+	}
+
+	set_input(total_chars, char_div, char_map);
+
+
+	function new_game() {
+		// update data stucture of word
+		word = generate_word(WORD_LSIT);
+		total_chars = word.length;
+		myMap = parseWords(word);
+		myMapStack = parseWordsStack(word);
+
+		char_div.html("");
+		char_map = {};
+		set_input(total_chars, char_div, char_map);
+
+		total_false_click = 1;
+		current_man.hide();
+		current_man = getMan(1);
+		current_man.show();
+		$(".character").css('background-color', '#4CAF50');
+	}
+
+	popup_button.click(function(){
+		popup_msg.hide();
+		new_game();
+	});
+
+	// process image
+	current_man = getMan(1);
+	$(".character").click(function(){
+		total_click = total_click + 1;
+		var value = $(this).val();
+		if (myMap[value] == undefined || myMap[value] == 0) {
+			total_false_click = total_false_click + 1;
+			// total false click can not exceed length of word
+			if (total_false_click > MAX_FAIL_NUMBER) {
+				// alert("You fail");
+				// popup_h2.text("You fail!");
+				// popup_msg.show();
+				showpopup(popup_h2, popup_msg, "You fail!");
+			} else {
+				// update man image
+				current_man.hide();
+				var next_man = getMan(total_false_click);
+				next_man.show();
+				current_man = next_man;
+			}
+		} else {
+			var fill_index_list = myMapStack[value];
+			for (let i = 0; i < fill_index_list.length; i++) {
+				var fill_index = fill_index_list[i];
+				var fill_input = getInput(char_map, fill_index);
+				fill_input.val(value);
+			}
+			myMap[value] -= fill_index_list.length;
+			if (checkSuccess(myMap) == true) {
+				showpopup(popup_h2, popup_msg, "Congratulations! You win!");
+			}
+			// player input value and it's correct
+			// we should display this value in the correct index
+		}
+		$(this).css('background-color', '#d36123');
+
+	});
+
+});
+</script>
+</html>
